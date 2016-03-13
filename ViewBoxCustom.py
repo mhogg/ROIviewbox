@@ -14,53 +14,7 @@ import pickle
 import pyqtgraph.functions as fn
 import types
 
-__all__=['ImageAnalysisViewBox','ViewMode','MultiRoiViewBox']
-
-class ImageAnalysisViewBox(pg.ViewBox):
-
-    """
-    Custom ViewBox used to over-ride the context menu. I don't want the full context menu, 
-    just a view all and an export. Export does not call a dialog, just prompts user for filename.
-    """
-
-    def __init__(self,parent=None,border=None,lockAspect=False,enableMouse=True,invertY=False,enableMenu=True,name=None):
-        pg.ViewBox.__init__(self,parent,border,lockAspect,enableMouse,invertY,enableMenu,name)
-   
-        self.menu = None # Override pyqtgraph ViewBoxMenu 
-        self.menu = self.getMenu(None)       
-        
-    def raiseContextMenu(self, ev):
-        if not self.menuEnabled(): return
-        menu = self.getMenu(ev)
-        pos  = ev.screenPos()
-        menu.popup(QtCore.QPoint(pos.x(), pos.y()))
-        
-    def export(self):
-        self.exp = ImageExporter(self)
-        self.exp.export()
-
-    def getMenu(self,event):
-        if self.menu is None:
-            self.menu        = QtGui.QMenu()
-            self.viewAll     = QtGui.QAction("View All", self.menu)
-            self.exportImage = QtGui.QAction("Export image", self.menu)
-            self.viewAll.triggered[()].connect(self.autoRange)
-            self.exportImage.triggered[()].connect(self.export)
-            self.menu.addAction(self.viewAll)
-            self.menu.addAction(self.exportImage)
-        return self.menu 
- 
- 
-class ViewMode():
-    def __init__(self,id,cmap):
-        self.id   = id
-        self.cmap = cmap
-        self.getLookupTable()
-    def getLookupTable(self):        
-        lut = [ [ int(255*val) for val in self.cmap(i)[:3] ] for i in xrange(256) ]
-        lut = np.array(lut,dtype=np.ubyte)
-        self.lut = lut     
-
+__all__=['MultiRoiViewBox']
 
 class MultiRoiViewBox(pg.ViewBox):
 
@@ -74,9 +28,9 @@ class MultiRoiViewBox(pg.ViewBox):
         self.img      = None
         self.menu     = None # Override pyqtgraph ViewBoxMenu 
         self.menu     = self.getMenu(None)       
-        self.NORMAL   = ViewMode(0,matplotlib.cm.gray)  
-        self.DEXA     = ViewMode(1,matplotlib.cm.jet)
-        self.viewMode = self.NORMAL
+        #self.NORMAL   = ViewMode(0,matplotlib.cm.gray)  
+        #self.DEXA     = ViewMode(1,matplotlib.cm.jet)
+        #self.viewMode = self.NORMAL
         self.drawROImode = False
         self.drawingROI  = None
         
@@ -216,16 +170,10 @@ class MultiRoiViewBox(pg.ViewBox):
             self.addROIPolyAct.triggered.connect(self.addPolyRoiRequest)    
             self.submenu.addAction(self.addROIRectAct)
             self.submenu.addAction(self.addROIPolyAct)
-        
+            
             self.loadROIAct  = QtGui.QAction("Load ROI", self.menu)
-            self.dexaMode    = QtGui.QAction("DEXA mode", self.menu)
             self.viewAll     = QtGui.QAction("View All", self.menu)
-            self.exportImage = QtGui.QAction("Export image", self.menu)
-
-            self.loadROIAct.triggered[()].connect(self.loadROI)
-            self.dexaMode.toggled.connect(self.toggleViewMode)
             self.viewAll.triggered[()].connect(self.autoRange)
-            self.exportImage.triggered[()].connect(self.export)
             
             self.menu.addAction(self.viewAll)
             self.menu.addSeparator()
@@ -430,3 +378,4 @@ class MultiRoiViewBox(pg.ViewBox):
             self.addItem(self.img)      
         self.img.setImage(arr,autoLevels=False)
         self.updateView()  
+        
