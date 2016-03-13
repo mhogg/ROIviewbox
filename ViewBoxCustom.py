@@ -27,10 +27,7 @@ class MultiRoiViewBox(pg.ViewBox):
         self.currentROIindex = None
         self.img      = None
         self.menu     = None # Override pyqtgraph ViewBoxMenu 
-        self.menu     = self.getMenu(None)       
-        #self.NORMAL   = ViewMode(0,matplotlib.cm.gray)  
-        #self.DEXA     = ViewMode(1,matplotlib.cm.jet)
-        #self.viewMode = self.NORMAL
+        self.menu     = self.getMenu(None)
         self.drawROImode = False
         self.drawingROI  = None
         
@@ -352,16 +349,6 @@ class MultiRoiViewBox(pg.ViewBox):
             self.rois.pop(self.currentROIindex)
             self.removeItem(roi)  
             self.setCurrentROIindex(None) 
-
-    def toggleViewMode(self,isChecked):
-        """ Toggles between NORMAL (Black/White) and DEXA mode (colour) """
-        if isChecked: viewMode = self.DEXA
-        else:         viewMode = self.NORMAL
-        self.setViewMode(viewMode)             
-        
-    def setViewMode(self,viewMode):
-        self.viewMode = viewMode
-        self.updateView()
 
     def updateView(self):
         self.background.setBrush(fn.mkBrush(self.viewMode.lut[0]))
