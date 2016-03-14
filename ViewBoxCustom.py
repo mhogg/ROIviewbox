@@ -9,6 +9,7 @@ from pyqtgraph.Qt import QtCore,QtGui
 import numpy as np
 from ROI import ROI, RectROIcustom, PolyLineROIcustom
 from pyqtgraph.exporters import ImageExporter
+from PIL import Image
 import matplotlib
 import pickle
 import pyqtgraph.functions as fn
@@ -25,9 +26,9 @@ class MultiRoiViewBox(pg.ViewBox):
         
         self.rois = []
         self.currentROIindex = None
-        self.img      = None
-        self.menu     = None # Override pyqtgraph ViewBoxMenu 
-        self.menu     = self.getMenu(None)
+        self.img         = None
+        self.menu        = None
+        self.menu        = self.getMenu(None)       
         self.drawROImode = False
         self.drawingROI  = None
         
@@ -147,7 +148,7 @@ class MultiRoiViewBox(pg.ViewBox):
             roi.sigCopyRequested.connect(self.copyROI)
             roi.sigSaveRequested.connect(self.saveROI)
             # Re-activate mouse clicks for all roi, segments and handles
-            roi.removable   = True
+            roi.removable    = True
             roi.translatable = True  
             for seg in roi.segments:
                 seg.setSelectable(True)
@@ -168,10 +169,13 @@ class MultiRoiViewBox(pg.ViewBox):
             self.submenu.addAction(self.addROIRectAct)
             self.submenu.addAction(self.addROIPolyAct)
             
+            self.loadImageAct = QtGui.QAction("Load image", self.menu)
+            self.loadImageAct.triggered.connect(self.loadImage)
             self.loadROIAct  = QtGui.QAction("Load ROI", self.menu)
             self.viewAll     = QtGui.QAction("View All", self.menu)
             self.viewAll.triggered[()].connect(self.autoRange)
             
+            self.menu.addAction(self.loadImageAct)
             self.menu.addAction(self.viewAll)
             self.menu.addSeparator()
             self.menu.addMenu(self.submenu)
@@ -350,19 +354,28 @@ class MultiRoiViewBox(pg.ViewBox):
             self.removeItem(roi)  
             self.setCurrentROIindex(None) 
 
-    def updateView(self):
-        self.background.setBrush(fn.mkBrush(self.viewMode.lut[0]))
-        self.background.show()  
-        if    self.img==None: return
-        else: self.img.setLookupTable(self.viewMode.lut)            
+    def loadImage(self):
+        fileName = QtGui.QFileDialog.getOpenFileName(None, self.tr("Load image"), QtCore.QDir.currentPath())    
+        if fileName!='':
+            try:
+                imgarr = np.array(Image.open(str(fileName)))
+                imgarr = imgarr.swapaxes(0,1)
+                if   imgarr.ndim==2: imgarr = imgarr[:,::-1]
+                elif imgarr.ndim==3: imgarr = imgarr[:,::-1,:]                   
+                self.imgarr = imgarr
+            except:
+                pass
+            else:
+                self.enableAutoRange()
+                self.showImage(self.imgarr)
+                self.disableAutoRange()
        
     def showImage(self,arr):
-        if arr==None: 
+        if arr is None: 
             self.img = None
             return
         if self.img==None: 
             self.img = pg.ImageItem(arr,autoRange=False,autoLevels=False)
             self.addItem(self.img)      
         self.img.setImage(arr,autoLevels=False)
-        self.updateView()  
         
